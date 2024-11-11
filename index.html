@@ -6,9 +6,6 @@
     <title>Formulario de Control Disciplinario</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* ... (estilos anteriores) ... */
-
-        /* Estilos para el modal de preview */
         .modal {
             display: none;
             position: fixed;
@@ -81,9 +78,6 @@
             border-radius: 8px;
             text-align: center;
         }
-
-        /* Resto de estilos igual que antes */
-        /* ... */
     </style>
 </head>
 <body>
@@ -107,9 +101,19 @@
         </div>
     </div>
 
-    <!-- Contenido del formulario como antes -->
+    <!-- Contenido del formulario -->
     <div class="container">
-        <!-- ... (resto del formulario igual que antes) ... -->
+        <!-- Ejemplo de contenido para visualizar -->
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Ingrese el nombre">
+        
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha">
+        
+        <label for="telefono">Teléfono:</label>
+        <input type="text" id="telefono" name="telefono" placeholder="Ingrese el teléfono">
+        
+        <button onclick="enviarWhatsApp()">Generar Preview</button>
     </div>
 
     <script>
@@ -117,8 +121,9 @@
         let telefonoActual = '';
 
         async function generarPreview() {
-            const telefono = document.getElementById('telefono').value;
-            if (telefono.trim() === '') {
+            console.log("Generando preview...");  // Verificación
+            const telefono = document.getElementById('telefono').value.trim();
+            if (!telefono) {
                 alert('Por favor, ingrese un número de teléfono.');
                 return;
             }
@@ -127,11 +132,9 @@
             document.getElementById('loader').style.display = 'flex';
 
             try {
-                // Ocultar los botones temporalmente
                 const botonesContainer = document.querySelector('.buttons-container');
-                botonesContainer.style.display = 'none';
+                if (botonesContainer) botonesContainer.style.display = 'none';
 
-                // Capturar el formulario
                 const formulario = document.querySelector('.container');
                 const canvas = await html2canvas(formulario, {
                     scale: 2,
@@ -140,24 +143,18 @@
                     letterRendering: true
                 });
 
-                // Restaurar los botones
-                botonesContainer.style.display = 'flex';
+                if (botonesContainer) botonesContainer.style.display = 'flex';
 
-                // Guardar la imagen para usarla después
                 imagenGenerada = canvas.toDataURL('image/png');
+                document.getElementById('previewImage').src = imagenGenerada;
 
-                // Mostrar la imagen en el preview
-                const previewImage = document.getElementById('previewImage');
-                previewImage.src = imagenGenerada;
-
-                // Mostrar el modal
                 document.getElementById('previewModal').style.display = 'flex';
             } catch (error) {
                 console.error('Error al generar la imagen:', error);
                 alert('Hubo un error al generar la imagen. Por favor, intente nuevamente.');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
             }
-
-            document.getElementById('loader').style.display = 'none';
         }
 
         function closePreview() {
@@ -165,25 +162,21 @@
         }
 
         async function enviarImagen() {
+            console.log("Enviando imagen...");  // Verificación
             if (!imagenGenerada || !telefonoActual) {
                 alert('Hubo un error. Por favor, intente nuevamente.');
                 return;
             }
 
             try {
-                // Convertir base64 a blob
                 const fetchResponse = await fetch(imagenGenerada);
                 const blob = await fetchResponse.blob();
-
-                // Crear objeto File
                 const file = new File([blob], "reporte-disciplinario.png", { type: "image/png" });
 
-                // Obtener datos para el mensaje
                 const nombre = document.getElementById('nombre').value;
                 const fecha = document.getElementById('fecha').value;
                 const mensaje = `Registro disciplinario de ${nombre} - ${fecha}`;
 
-                // Intentar usar Web Share API
                 if (navigator.share && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
@@ -193,17 +186,10 @@
                         });
                         closePreview();
                     } catch (error) {
-                        console.error('Error al compartir:', error);
-                        // Si falla, usar el fallback de WhatsApp Web
-                        const urlWhatsApp = `https://web.whatsapp.com/send?phone=${telefonoActual}&text=${encodeURIComponent(mensaje)}`;
-                        window.open(urlWhatsApp, '_blank');
-                        closePreview();
+                        enviarPorWhatsApp(mensaje);
                     }
                 } else {
-                    // Fallback a WhatsApp Web
-                    const urlWhatsApp = `https://web.whatsapp.com/send?phone=${telefonoActual}&text=${encodeURIComponent(mensaje)}`;
-                    window.open(urlWhatsApp, '_blank');
-                    closePreview();
+                    enviarPorWhatsApp(mensaje);
                 }
             } catch (error) {
                 console.error('Error al enviar la imagen:', error);
@@ -211,7 +197,12 @@
             }
         }
 
-        // Reemplazar la función anterior de enviarWhatsApp por generarPreview
+        function enviarPorWhatsApp(mensaje) {
+            const urlWhatsApp = `https://web.whatsapp.com/send?phone=${telefonoActual}&text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWhatsApp, '_blank');
+            closePreview();
+        }
+
         function enviarWhatsApp() {
             generarPreview();
         }
