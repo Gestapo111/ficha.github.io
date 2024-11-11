@@ -1,25 +1,48 @@
-const nombreEstudiante = "Juan Orozco";
-const grado = "1° Tec";
-const seccion = "A";
-const fecha = "2024-11-10";
-const hora = "21:03";
-const tipoFalta = "Leve";
-const descripcionFalta = "fumando";
-const acuerdoResponsable = "motawa";
+let imagenGenerada = null;
+let telefonoActual = '';
 
-const mensaje = `Estimado(a):
+async function generarPreview() {
+    const telefono = document.getElementById('telefono').value.trim();
+    if (!telefono) {
+        alert('Por favor, ingrese un número de teléfono.');
+        return;
+    }
 
-Le informamos que el estudiante ${nombreEstudiante}, del grado ${grado} sección ${seccion}, el día ${fecha} a las ${hora}, incurrió en una falta de tipo: ${tipoFalta}.
+    telefonoActual = telefono;
+    document.getElementById('loader').style.display = 'flex';
 
-Descripción de la falta:
-${descripcionFalta}
+    try {
+        const formulario = document.querySelector('.container');
+        const canvas = await html2canvas(formulario, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            letterRendering: true
+        });
 
-Acuerdo con el responsable:
-${acuerdoResponsable}
+        imagenGenerada = canvas.toDataURL('image/png');
+        document.getElementById('previewImage').src = imagenGenerada;
+        document.getElementById('previewModal').style.display = 'flex';
+    } catch (error) {
+        console.error('Error al generar la imagen:', error);
+        alert('Hubo un error al generar la imagen. Por favor, intente nuevamente.');
+    } finally {
+        document.getElementById('loader').style.display = 'none';
+    }
+}
 
-Atentamente,
-[Nombre de la Institución]`;
+function closePreview() {
+    document.getElementById('previewModal').style.display = 'none';
+}
 
-// Convertir a formato URI para WhatsApp
-const urlMensaje = `https://web.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
-window.open(urlMensaje, '_blank');
+async function enviarImagen() {
+    const nombre = document.getElementById('nombre').value;
+    const fecha = document.getElementById('fecha').value;
+    const descripcionFalta = document.getElementById('descripcion').value;
+    const acuerdoResponsable = document.getElementById('acuerdo').value;
+
+    const mensaje = `Estimado(a):\n\nLe informamos que el estudiante ${nombre}, el día ${fecha}, incurrió en una falta.\n\nDescripción de la falta:\n${descripcionFalta}\n\nAcuerdo con el responsable:\n${acuerdoResponsable}\n\nAtentamente,\n[Nombre de la Institución]`;
+
+    const urlMensaje = `https://web.whatsapp.com/send?phone=${telefonoActual}&text=${encodeURIComponent(mensaje)}`;
+    window.open(urlMensaje, '_blank');
+}
